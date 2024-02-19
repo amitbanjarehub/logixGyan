@@ -1,0 +1,525 @@
+import React from "react";
+import {
+  Card,
+  CardContent,
+  TextField,
+  Typography,
+  InputLabel,
+  Select,
+  Dialog,
+  DialogContent,
+  Avatar,
+  DialogActions,
+} from "@mui/material";
+import FormControl from "@mui/material/FormControl";
+import Box from "@mui/material/Box";
+import Div from "@jumbo/shared/Div";
+import Button from "@mui/material/Button";
+import JumboDemoCard from "@jumbo/components/JumboDemoCard";
+import Stack from "@mui/material/Stack";
+import { IconButton } from "@mui/material";
+import Grid from "@material-ui/core/Grid";
+import { makeStyles } from "@material-ui/core/styles";
+import PhotoCameraRoundedIcon from "@material-ui/icons/PhotoCameraRounded";
+import { useState } from "react";
+import { useGeolocated } from "react-geolocated";
+import * as yup from "yup";
+import { Form, Formik } from "formik";
+import { useQuery } from "react-query";
+import { companyServices } from "app/services/companyservices";
+import MenuItem from "@mui/material/MenuItem";
+import moment from "moment";
+import { SERVER_IMAGE_PATH } from "app/utils/constants/paths";
+import { userServices } from "app/services/userservices";
+import { useMutation } from "react-query";
+
+let resetFormFunc = null;
+const validationSchema = yup.object({
+  addMilometerReading: yup
+    .string("Add Milometer Reading")
+    .required("Milometer Reading is required"),
+});
+const useStyles = makeStyles((theme) => ({
+  root: {
+    height: "100%",
+    textAlign: "center",
+  },
+
+  input: {
+    display: "none",
+  },
+}));
+
+const View_attendance = () => {
+  const classes = useStyles();
+
+  const [source, setSource] = useState("");
+
+  const handleCapture = (target) => {
+    if (target.files) {
+      if (target.files.length !== 0) {
+        const file = target.files[0];
+        const newUrl = URL.createObjectURL(file);
+        setSource(newUrl);
+      }
+    }
+  };
+
+  const { coords, isGeolocationAvailable, isGeolocationEnabled } =
+    useGeolocated({
+      positionOptions: {
+        enableHighAccuracy: false,
+      },
+      userDecisionTimeout: 5000,
+    });
+  const onAdd = (addMilometerReading) => {
+    Logout_attendance.allot({
+      addMilometerReading,
+    });
+  };
+
+  const vuserMutation = useMutation(userServices.verify, {
+    onError(error) {
+      console.log(error);
+    },
+  });
+  const comphandleChange = (event) => {
+    setId(event.target.value);
+    console.log("result of handleChange: ", event);
+  };
+  const [cId, setId] = useState();
+  console.log("cId", cId);
+
+  const wComp = useQuery(["company-list"], companyServices.wList);
+
+  console.log("result of wComp: ", wComp);
+
+  const liwComp = wComp?.data?.data ?? [];
+
+  const bhandleChange = (e) => {
+    setbId(e.target.value);
+    // console.log("result of handleChange: ", e);
+  };
+  const [branchId, setbId] = useState();
+
+  const cDetails = useQuery(["companyDetails", { cId }], async () =>
+    companyServices.details(cId)
+  );
+  const liwBranch = cDetails?.data?.data.companyBranch ?? [];
+
+  const [month, setMonth] = useState();
+  const [year, setYear] = useState();
+  const handleMonthChange = (event) => {
+    setMonth(moment(event.target.value).format("MM"));
+    setYear(moment(event.target.value).format("YYYY"));
+  };
+  const [open, setOpen] = React.useState(false);
+  const uDetails = useQuery(["companyDetails", {}], async () =>
+    userServices.details()
+  );
+
+  const vUserList = useQuery(["UserList", { branchId }], async () =>
+    userServices.vblist(branchId)
+  );
+  const liUserList = vUserList?.data?.data ?? [];
+
+  console.log("result of liUserList: ", liUserList);
+
+  const [userId, setUserId] = useState();
+  const handleUserChange = (event) => {
+    setUserId(event.target.value);
+    console.log("result of handleChange: ", event);
+  };
+
+  return (
+    <React.Fragment>
+      <Card sx={{ display: "flex", mb: 3.5 }}>
+        <Div sx={{ display: "flex", flexDirection: "column", flex: "1" }}>
+          <CardContent>
+            <Typography component={"h2"} variant="h1" mb={3}>
+              View Attendance
+            </Typography>
+            <Box
+              component="form"
+              sx={{
+                mx: -1,
+
+                "& .MuiFormControl-root:not(.MuiTextField-root)": {
+                  p: 1,
+                  mb: 2,
+                  width: { xs: "30%", sm: "50%" },
+                },
+
+                "& .MuiFormControl-root.MuiFormControl-fluid": {
+                  width: "30%",
+                },
+              }}
+              autoComplete="off"
+            >
+              <JumboDemoCard
+                title={""}
+                wrapperSx={{ backgroundColor: "background.paper", pt: 0 }}
+              >
+                <FormControl className="MuiFormControl-fluid">
+                  <InputLabel>Select Company</InputLabel>
+                  <Select
+                    name="companyName"
+                    onChange={comphandleChange}
+                    value={cId}
+                  >
+                    {liwComp?.map((comp) => (
+                      <MenuItem id={comp.id} value={comp.id} key={comp.id}>
+                        {comp.companyName}{" "}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+
+                <FormControl className="MuiFormControl-fluid">
+                  <InputLabel>Select Branch</InputLabel>
+                  <Select
+                    name="branchId"
+                    onChange={bhandleChange}
+                    value={branchId}
+                  >
+                    {liwBranch?.map((branch) => (
+                      <MenuItem
+                        id={branch.id}
+                        value={branch.id}
+                        key={branch.id}
+                      >
+                        {branch.branchName}{" "}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl className="MuiFormControl-fluid">
+                  <InputLabel>Select User</InputLabel>
+                  <Select
+                    name="userId"
+                    onChange={handleUserChange}
+                    value={userId}
+                  >
+                    {liUserList?.map((user) => (
+                      <MenuItem id={user.id} value={user.id} key={user.id}>
+                        {user.name}{" "}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl className="MuiFormControl-fluid">
+                  <Stack component="form" noValidate spacing={3}>
+                    <TextField
+                      id="date"
+                      label="Select Date"
+                      type="date"
+                      defaultValue="2017-05-24"
+                      sx={{ width: 220 }}
+                      InputLabelProps={{
+                        shrink: true,
+                      }}
+                    />
+                  </Stack>
+                </FormControl>
+              </JumboDemoCard>
+            </Box>
+          </CardContent>
+        </Div>
+      </Card>
+      <Card sx={{ display: "flex", mb: 3.5 }}>
+        <Div sx={{ display: "flex", flexDirection: "column", flex: "1" }}>
+          <CardContent>
+            <Formik
+              validateOnChange={true}
+              validationSchema={validationSchema}
+              initialValues={{
+                addMilometerReading: "",
+              }}
+              onSubmit={async (data, { setSubmitting, resetForm }) => {
+                resetFormFunc = resetForm;
+                setSubmitting(true);
+                console.log("submitting");
+                await onAdd(data.addMilometerReading);
+
+                setSubmitting(false);
+              }}
+            >
+              {({ isSubmitting }) => (
+                <Box
+                  component="form"
+                  sx={{
+                    mx: -1,
+
+                    "& .MuiFormControl-root:not(.MuiTextField-root)": {
+                      p: 1,
+                      mb: 2,
+                      width: { xs: "100%", sm: "50%" },
+                    },
+
+                    "& .MuiFormControl-root.MuiFormControl-fluid": {
+                      width: "100%",
+                    },
+                  }}
+                  autoComplete="off"
+                >
+                  <Typography component={"h2"} variant="h1" mb={3}>
+                    Attendance
+                  </Typography>
+                  <FormControl className="MuiFormControl-fluid">
+                    <label htmlFor="contained-button-file">
+                      <JumboDemoCard
+                        title={"In Time Selfie"}
+                        wrapperSx={{
+                          backgroundColor: "background.paper",
+                          pt: 0,
+                        }}
+                      >
+                        <Div
+                          style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Button
+                            variant="outlined"
+                            onClick={() => setOpen(true)}
+                          >
+                            View Image
+                          </Button>
+                          <Dialog open={open} onClose={() => setOpen(false)}>
+                            <DialogContent>
+                              <Div
+                                // noValidate
+                                // component="form"
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  m: "auto",
+                                  width: "fit-content",
+                                }}
+                              >
+                                <FormControl sx={{ mt: 2, minWidth: 120 }}>
+                                  <Avatar
+                                    a
+                                    alt="Remy Sharp"
+                                    src={SERVER_IMAGE_PATH + uDetails.userImage}
+                                    sx={{ width: 500, height: 500 }}
+                                  />
+                                </FormControl>
+                              </Div>
+                            </DialogContent>
+                            <DialogActions>
+                              <Button onClick={() => setOpen(false)}>
+                                Close
+                              </Button>
+                            </DialogActions>
+                          </Dialog>
+                        </Div>
+                      </JumboDemoCard>
+                    </label>
+                   
+                    <label htmlFor="contained-button-file">
+                      <JumboDemoCard
+                        title={"Check in Time"}
+                        wrapperSx={{
+                          backgroundColor: "background.paper",
+                          pt: 0,
+                        }}
+                      >
+                        <input type={text} />
+                      </JumboDemoCard>
+                    </label>
+                    <br />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      id="contained-button-file"
+                    />
+                    <label htmlFor="contained-button-file">
+                      <JumboDemoCard
+                        title={"Out Time Selfie"}
+                        wrapperSx={{
+                          backgroundColor: "background.paper",
+                          pt: 0,
+                        }}
+                      >
+                        <Div
+                          style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Button
+                            variant="outlined"
+                            onClick={() => setOpen(true)}
+                          >
+                            View Image
+                          </Button>
+                          <Dialog open={open} onClose={() => setOpen(false)}>
+                            <DialogContent>
+                              <Div
+                                // noValidate
+                                // component="form"
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  m: "auto",
+                                  width: "fit-content",
+                                }}
+                              >
+                                <FormControl sx={{ mt: 2, minWidth: 120 }}>
+                                  <Avatar
+                                    a
+                                    alt="Remy Sharp"
+                                    src={SERVER_IMAGE_PATH + uDetails.userImage}
+                                    sx={{ width: 500, height: 500 }}
+                                  />
+                                </FormControl>
+                              </Div>
+                            </DialogContent>
+                            <DialogActions>
+                              <Button onClick={() => setOpen(false)}>
+                                Close
+                              </Button>
+                            </DialogActions>
+                          </Dialog>
+                        </Div>
+                      </JumboDemoCard>
+                    </label>
+                    <br />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      id="contained-button-file"
+                    />
+                    <label htmlFor="contained-button-file">
+                      <JumboDemoCard
+                        title={"Add In time Milometer Reading Image"}
+                        wrapperSx={{
+                          backgroundColor: "background.paper",
+                          pt: 0,
+                        }}
+                      >
+                        <Div
+                          style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Button
+                            variant="outlined"
+                            onClick={() => setOpen(true)}
+                          >
+                            View Image
+                          </Button>
+                          <Dialog open={open} onClose={() => setOpen(false)}>
+                            <DialogContent>
+                              <Div
+                                // noValidate
+                                // component="form"
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  m: "auto",
+                                  width: "fit-content",
+                                }}
+                              >
+                                <FormControl sx={{ mt: 2, minWidth: 120 }}>
+                                  <Avatar
+                                    a
+                                    alt="Remy Sharp"
+                                    src={SERVER_IMAGE_PATH + uDetails.userImage}
+                                    sx={{ width: 500, height: 500 }}
+                                  />
+                                </FormControl>
+                              </Div>
+                            </DialogContent>
+                            <DialogActions>
+                              <Button onClick={() => setOpen(false)}>
+                                Close
+                              </Button>
+                            </DialogActions>
+                          </Dialog>
+                        </Div>
+                      </JumboDemoCard>
+                    </label>
+                    <br />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      id="contained-button-file"
+                    />
+                    <label htmlFor="contained-button-file">
+                      <JumboDemoCard
+                        title={"Add Out time Milometer Reading Image"}
+                        wrapperSx={{
+                          backgroundColor: "background.paper",
+                          pt: 0,
+                        }}
+                      >
+                        <Div
+                          style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Button
+                            variant="outlined"
+                            onClick={() => setOpen(true)}
+                          >
+                            View Image
+                          </Button>
+                          <Dialog open={open} onClose={() => setOpen(false)}>
+                            <DialogContent>
+                              <Div
+                                // noValidate
+                                // component="form"
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  m: "auto",
+                                  width: "fit-content",
+                                }}
+                              >
+                                <FormControl sx={{ mt: 2, minWidth: 120 }}>
+                                  <Avatar
+                                    a
+                                    alt="Remy Sharp"
+                                    src={SERVER_IMAGE_PATH + uDetails.userImage}
+                                    sx={{ width: 500, height: 500 }}
+                                  />
+                                </FormControl>
+                              </Div>
+                            </DialogContent>
+                            <DialogActions>
+                              <Button onClick={() => setOpen(false)}>
+                                Close
+                              </Button>
+                            </DialogActions>
+                          </Dialog>
+                        </Div>
+                      </JumboDemoCard>
+                    </label>
+                  </FormControl>
+
+                  <Div sx={{ mx: 1 }}>
+                    <Button variant={"contained"}>Close</Button>
+                  </Div>
+                </Box>
+              )}
+            </Formik>
+          </CardContent>
+        </Div>
+      </Card>
+    </React.Fragment>
+  );
+};
+
+export default View_attendance;
